@@ -1,0 +1,28 @@
+<?php
+	require_once('defaults.php');
+	require_once('db.php');
+	
+	$csvdir = dirname(realpath(__FILE__)).'/csv_import';
+	
+	$apotheke = array('ik' => '', 'name' => '', 'adresse' => '', 'plz' => '', 'ort' => '', 'tel' => ''); 
+	
+	$pflegekasse_felder = array('ik' => 'IK_PK', 'name' => 'Pflegekasse', 'adresse' => 'Straße_PK', 'plz' => 'PLZ_PK', 'ort' => 'Ort_PK');
+	$patienten_felder = array('name' => 'Name', 'vorname' => 'Vorname', 'geb' => 'Geburtstag', 'adresse' => 'Straße', 'plz' => 'PLZ', 'ort' => 'Ort', 'vsnr' => 'VSNr');
+	$pg54_felder = array('kz' => 'GenKZ_PG54');
+	
+	$importfelder = array( 'pflegekasse' => $pflegekasse_felder, 'patienten' => $patienten_felder, 'gen_pg54' => $pg54_felder); 
+	
+	$importbind = array('name' => 's', 'vorname' => 's', 'geb' => 's', 'adresse' => 's', 'plz' => 'i', 'ort' => 's', 'vsnr' => 's', 'kz' => 's');
+
+	$bools = array();
+	
+	$csv_separator = ';';
+	//$csv_encoding = 'Windows-1252';
+	$csv_encoding = $db_encoding = 'UTF-8';
+	
+	$db_datetime_format = '%d.%m.%Y %H:%i';
+	$db_date_format = '%d.%m.%Y';
+	
+	define('VERBOSE', true);
+
+?>

@@ -1,0 +1,198 @@
+@media all {
+
+	body {
+	  padding-top: 5rem;
+	}
+	
+	.mainInfo {
+	  padding: 3rem 1.5rem;
+	  text-align: center;
+	}
+	
+	.ym-wrapper {
+		max-width:100em;
+	}
+	
+	.databox h2 {
+		text-align: center;
+	}
+	
+	.plus-button {
+	  font-weight:bold;
+	  font-size:150%;
+	}
+	
+	.plus-button::before {
+	  content: "+";  
+	}
+	
+	.button-bar {
+		padding: 0.5em;
+		left: 25%;
+	}
+
+	.maincol, .sidecol {
+		margin: 0 3em;
+	}
+	
+	.button-bar button {
+		margin-left: 1em;
+		font-weight: bold;
+	}
+	
+	.quickies-box button {
+		margin: 0 0.5em;
+		font-weight: bold;
+	}
+	
+	.quickies-box ul {
+		list-style-type: none;
+	}
+	
+	.quickies-box ul li {
+		margin-bottom: 0.5em;
+	}
+	
+	table.anlage3, table.anlage3 td, table.anlage3 th {
+		font-size:107%;
+		/* line-height: 1.0; */
+	}
+	
+	table.anlage3 td {
+		padding: 1em 0 0 0;
+	}
+	
+	input.input_betrag, input.input_menge {
+		text-align:right;
+	}
+	
+	input.input_kasse, input.input_patient {
+		font-weight:bold;
+	}
+	
+	table.anlage3 th.anlage3_col {
+			padding-top: 1em;
+	}	
+	
+	input.anlage3_check {
+		margin-right:0.5em;
+	}
+	
+	table.anlage3 td.anlage3_check {
+			padding-top: 0.5em;
+	}	
+	
+	table.anlage3 td.anlage3_col,
+	table.anlage3 td.anlage3_total_kasse, table.anlage3 td.anlage3_sum_kasse {
+			padding-top: 0;			
+	}	
+	
+	table.anlage3 td.anlage3_sum_eigen54 {
+		padding-bottom: 0.5em;
+	}
+	
+		
+	table.anlage3 th.anlage3_title, table.anlage3 th.anlage3_subtitle {
+		text-align:center;
+	}
+	
+	table.anlage3 td.anlage3_col4, table.anlage3 th.anlage3_actk {
+		text-align:right;
+	}
+	
+	table.anlage3 td.anlage3_label {
+		font-size:65%;
+		padding-top:0;
+	}
+	
+	table.anlage3 td.anlage3_signlabel {
+		font-size:77%;
+		padding-top:0;		
+	}
+	
+	table.anlage3 td.anlage3_p {
+		font-size:77%;
+	}
+	
+	table.anlage3 td.anlage3_footnote {
+		font-size:55%;
+	}
+	
+	table.anlage3 td.anlage3_sign {
+		border-bottom: 2px solid black;
+		min-height: 5em;
+		height: 5em;
+		vertical-align: bottom;
+	}
+	
+	table.anlage3 td.anlage3_sign_datum {
+		padding-bottom: 0.5em;		
+	}
+/*	
+	[type="checkbox"] + label {
+		position: absolute;
+	}
+	
+	[type="checkbox"] {
+		position: relative;
+		left: 15px;
+		top: -4px;
+		top: 4px;
+		z-index: 0;
+		-webkit-appearance: none;
+	}
+	
+	[type="checkbox"] + label::before {
+		padding: 0 0 0 0.2em;
+		border: 2px solid black;
+		width: 1.2em;
+		height: 1.2em;
+		display: block;
+		content: "";
+		float: left;
+		margin-right: 5px;
+		z-index: 5;
+		position: relative;
+	}
+	
+	[type="checkbox"]:checked+label::before {
+		content: "X";
+		
+		font-weight:bold;
+		overflow:hidden;
+	}
+*/
+}
+
+@media print {
+
+	body {
+	  padding-top: 0;
+	}
+	
+	input {
+		border-style: none;
+		display: inline
+	}
+	
+	.maincol {
+		margin-left: 2cm;
+	}
+	
+
+	
+/*	
+	@page {
+		size: A4;
+		margin:15mm;
+	}
+		
+	body, main.container {
+		width: 180mm !important;
+		min-width: 180mm !important;
+		max-width: 180mm !important;
+
+		height: 267mm;
+	}
+*/
+}
