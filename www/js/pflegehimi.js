@@ -671,6 +671,8 @@ function generateTable(hitlist, column_map, params) {
 	}
 	
 //	console.log('Wir erzeugen jetzt eine Tabelle mit '+hitlist.length+' Zeilen');
+
+	const today = moment();
 	
 	var table = $('<table>', table_attr);
 	var thead = $('<thead>', {'class':thead_class}).appendTo(table);
@@ -696,10 +698,43 @@ function generateTable(hitlist, column_map, params) {
 		} else {
 			//tr = $('<tr>', {'class':'accordion-toggle'}).attr('data-toggle','collapse').attr('data-target','#'+row_id).appendTo(tbody);
 			tr = $('<tr>').appendTo(tbody);
-			let btn = $('<button>', {'type':'button', 'class':'btn btn-default btn-xs'}).appendTo($('<td>').appendTo(tr)).on("click",function() { 
-				create_pg54(item['id']);
-			});
-			$('<span>', {'class':'plus-button'}).appendTo(btn);
+			let td = $('<td>').appendTo(tr);
+			let valid = false;
+			
+			if(item['pg54_start'] != null) {				
+				start = moment(item['pg54_start']);
+				if(start.isBefore(today)) {
+					valid = true;
+					console.log('Startdatum '+item['pg54_start']+' ist in der Vergangenheit');
+				} else {
+					valid = false;
+					console.log('Startdatum '+item['pg54_start']+' liegt in der Zukunft!!');
+				}				
+			} else {
+				console.log('Kein Startdatum vorhanden!!');
+			}
+			
+			if(item['pg54_ende'] != null) {
+				ende = moment(item['pg54_ende']);
+				if(today.isAfter(ende)) {
+					valid = false;
+					console.log('Enddatum '+item['pg54_ende']+' ist in der Vergangenheit!!');
+				} else {
+					valid = true;
+					console.log('Enddatum '+item['pg54_ende']+' liegt in der Zukunft');
+				}
+			} else {
+				console.log('Kein Enddatum vorhanden');
+			}
+			
+			if(valid) {
+				let btn = $('<button>', {'type':'button', 'class':'btn btn-default btn-xs'}).appendTo(td).on("click",function() { 
+					create_pg54(item['id']);
+				});
+				$('<span>', {'class':'plus-button'}).appendTo(btn);
+			} else {
+				$('<span>', {'class':'invalid'}).appendTo(td).append('--');
+			}
 		}
 		
 		for(let c in column_map) {

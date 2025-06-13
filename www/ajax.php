@@ -69,10 +69,13 @@
 	$st = null;
 	
 	//$q = 'SELECT patienten.*, DATE_FORMAT(geb,\''.$db_date_format.'\') AS geb, pflegekasse.ik as pk_ik, pflegekasse.name as pk_name FROM patienten, pflegekasse LEFT JOIN gen_pg54 ON gen_pg54.patient_id=patienten.id WHERE patienten.pflegekasse_id=pflegekasse.id AND LOWER (patienten.name) LIKE \''.$ss."'"
-	$q = 'SELECT p.*, DATE_FORMAT(p.geb,\''.$db_date_format.'\') AS geb, k.ik AS pk_ik, k.name AS pk_name, g.kz AS gen_pg54 ';
+	$q = 'SELECT p.*, DATE_FORMAT(p.geb,\''.$db_date_format.'\') AS geb, DATE_FORMAT(p.verstorben,\''.$db_date_format.'\') AS verstorben, '; 
+	$q .= 'k.ik AS pk_ik, k.name AS pk_name, ';
+	//$q .= 'g.kz AS gen_pg54, DATE_FORMAT(g.start,\''.$db_date_format.'\') AS pg54_start, DATE_FORMAT(g.end,\''.$db_date_format.'\') AS pg54_ende ';
+	$q .= 'g.kz AS gen_pg54, g.start AS pg54_start, g.end AS pg54_ende ';
 	$q .= 'FROM `patienten` AS p ';
-	$q .= 'INNER JOIN pflegekasse AS k ON p.pflegekasse_id=k.id ';
-	$q .= 'INNER JOIN gen_pg54 AS g ON g.patient_id=p.id ';
+	$q .= 'LEFT JOIN pflegekasse AS k ON p.pflegekasse_id=k.id ';
+	$q .= 'LEFT JOIN gen_pg54 AS g ON g.patient_id=p.id ';
 	
 	$o = ' ORDER BY p.name, p.vorname, p.vsnr';
 

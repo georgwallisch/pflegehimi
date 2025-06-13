@@ -17,23 +17,17 @@ $bootstrap_config_defaults['version'] = '4.6.2';
 $bootstrap_config_defaults['css_integrity'] = 'sha384-xOolHFLEh07PJGoPkLv1IbcEPTNtaed2xpHsD9ESMhqIYd0nLMwNLD69Npy4HI+N';
 $bootstrap_config_defaults['js_integrity'] = 'sha384-Fy6S3B9q64WdZWQUiU+q4/2Lc9npb8tCaSX9FK7E8HnRr0Jz8D6OP9dO5Vg3Q9ct';
 $bootstrap_config_defaults['path'] =  '/bootstrap/';
-$bootstrap_config_defaults['js_path'] = $bootstrap_config_defaults['css_path'] = '/js/';
+$bootstrap_config_defaults['js_path'] = '/js/';
 
-
-$bootstrap_config_defaults['jquery_js_version'] = '3.7.1';
-$bootstrap_config_defaults['jquery_js_dir'] = 'jquery-';
-$bootstrap_config_defaults['jquery_js_file'] = '.min.js';
-$bootstrap_config_defaults['jquery_js_integrity'] = 'sha384-1H217gwSVyLSIfaLxHbE7dRb3v4mYCKbpQvzx0cegeju1MVsGrX5xXxAvs/HgeFs';
-$bootstrap_config_defaults['jquery-ui_js_dir'] = $bootstrap_config_defaults['jquery-ui_css_dir'] = 'jquery-ui-1.13.0.custom/';
-$bootstrap_config_defaults['jquery-ui_css_integrity'] = 'sha384-8mv+EdwtnOCaUtnx36+KcuDVM0FRQ8cTdA6kqCZXbJWr1i2FC3x31Bhl2MG1gZdE';
-$bootstrap_config_defaults['jquery-ui_js_integrity'] = 'sha384-wjHrTJpOKGCAKZrtQ91chBNFhgX2FABFT5uqMIyby8Ms1BxWKIU6T25KvWURp1s3';
-$bootstrap_config_defaults['jquery-ui-i18n_js_dir'] = 'jquery-ui-i18n/';
-$bootstrap_config_defaults['jquery-ui-i18n_js_file'] = 'datepicker-de.js';
-$bootstrap_config_defaults['jquery-ui-i18n_js_integrity'] = 'sha384-NPnUv15Ub9lg3oIQmHmHanS5jJfuY3N+gKWRixQmbbQELD+uB47cn5F55VaRSs8k';
+$bootstrap_config_defaults['jquery_version'] = '3.6.0';
+$bootstrap_config_defaults['jquery_js_integrity'] = 'sha384-vtXRMe3mGCbOeY7l30aIg8H9p3GdeSe4IFlP6G8JMa7o7lXvnz3GFKzPxzJdPfGK';
+$bootstrap_config_defaults['jqueryui'] = 'jquery-ui-1.13.0.custom/';
+$bootstrap_config_defaults['jqueryui_css_integrity'] = 'sha384-8mv+EdwtnOCaUtnx36+KcuDVM0FRQ8cTdA6kqCZXbJWr1i2FC3x31Bhl2MG1gZdE';
+$bootstrap_config_defaults['jqueryui_js_integrity'] = 'sha384-wjHrTJpOKGCAKZrtQ91chBNFhgX2FABFT5uqMIyby8Ms1BxWKIU6T25KvWURp1s3';
+$bootstrap_config_defaults['jqueryui_i18n_js_integrity'] = 'sha384-NPnUv15Ub9lg3oIQmHmHanS5jJfuY3N+gKWRixQmbbQELD+uB47cn5F55VaRSs8k';
 $bootstrap_config_defaults['moment_js_version'] = 'latest/';
 $bootstrap_config_defaults['moment_js_dir'] = 'momentjs/';
 $bootstrap_config_defaults['moment_js_file'] = 'moment-with-locales.min.js';
-//$bootstrap_config_defaults['moment_js_integrity'] = 'sha384-IFyOtsSJQkqd1kMlhelCNzXIOub/YQewnLE43aaVvkbMDQMBbg7WApLMjn9yuW9M';
 
 $bootstrap_config_defaults['er'] = 0;
 $bootstrap_config_defaults['er_dev'] = E_ALL & ~E_NOTICE;
@@ -41,11 +35,9 @@ $bootstrap_config_defaults['dev_mode'] = false;
 $bootstrap_config_defaults['verbose'] = false;
 $bootstrap_config_defaults['debug_mode'] = false;
 
-$bootstrap_config_defaults['global_css'] = array('jquery-ui_css');
-$bootstrap_config_defaults['global_js'] = array('jQuery (necessary for Bootstrap\'s JavaScript plugins)' => 'jquery_js', 'Latest compiled and minified JavaScript' => 'js','jQuery UI' => 'jquery-ui_js', 'jQuery Datepicker' => 'jquery-ui-i18n_js');
 $bootstrap_config_defaults['local_css'] = array();
 $bootstrap_config_defaults['local_js'] = array();
-$bootstrap_config_defaults['inline_js_vars'] = array('debug_mode' => false);
+$bootstrap_config_defaults['inline_js_vars'] = array('debug_mode' => 'false');
 
 if(!headers_sent()) {
 	header('Access-Control-Allow-Origin: *');
@@ -65,12 +57,9 @@ if(array_key_exists('dev',$_REQUEST)) {
 
 if(array_key_exists('debug',$_REQUEST)) {
 	$bootstrap_config['debug_mode'] = true;
-	if(array_key_exists('inline_js_vars', $bootstrap_config) and is_array($bootstrap_config['inline_js_vars'])) {
-		$bootstrap_config['inline_js_vars']['debug_mode'] = true;
-	} else {
-		$bootstrap_config['inline_js_vars'] = array('debug_mode' => true);
-	}		
-}	
+	$bootstrap_config['inline_js_vars']['debug_mode'] = 'true';
+}
+	
 
 if(array_key_exists('verbose',$_REQUEST)) {
 	$bootstrap_config['verbose'] = true;
@@ -125,9 +114,8 @@ function bootstrap_config($config = NULL) {
 	foreach($bootstrap_config_defaults as $k => $v){
 		if(!array_key_exists($k, $bootstrap_config)) {
 			$bootstrap_config[$k] = $v;
-		} elseif(is_array($bootstrap_config[$k]) and is_array($bootstrap_config_defaults[$k])) {
-			//$bootstrap_config[$k] = array_merge_recursive($bootstrap_config[$k], $bootstrap_config_defaults[$k]);
-			$bootstrap_config[$k] = array_merge($bootstrap_config_defaults[$k], $bootstrap_config[$k]);
+		} elseif(is_array($bootstrap_config[$k]) and $bootstrap_config_defaults[$k]) {
+			$bootstrap_config[$k] = array_merge_recursive($bootstrap_config[$k], $bootstrap_config_defaults[$k]);
 		}		
 	}
 	
@@ -137,34 +125,13 @@ function bootstrap_config($config = NULL) {
 	}
 	
 	$bootstrap_verbose[] = "Set depending variables";	
+	$bootstrap_config['jqueryui_path'] = $bootstrap_config['js_path'].$bootstrap_config['jqueryui'];
 	$bootstrap_config['css'] = $bootstrap_config['path'].$bootstrap_config['version'].'/css/bootstrap.min.css';
 	$bootstrap_config['js'] = $bootstrap_config['path'].$bootstrap_config['version'].'/js/bootstrap.bundle.min.js';
-	
-	$x = array('js','css');
-	
-	foreach($x as $y) {
-		if(is_array($bootstrap_config['global_'.$y]) and count($bootstrap_config['global_'.$y]) > 0) {
-			foreach($bootstrap_config['global_'.$y] as $k => $v) {
-				if($y == $v) continue;
-				if(array_key_exists($v.'_dir', $bootstrap_config)) {
-						$bootstrap_config[$v.'_path'] = $bootstrap_config[$y.'_path'].$bootstrap_config[$v.'_dir'];
-				}
-				if(!array_key_exists($v.'_file', $bootstrap_config)) {
-						$bootstrap_config[$v.'_file'] =  str_replace('_'.$y,'.min.'.$y,$v);
-				}
-				
-				$bootstrap_config[$v] = $bootstrap_config[$v.'_path'].$bootstrap_config[$v.'_version'].$bootstrap_config[$v.'_file'];
-				
-			}
-		}
-	}
-	
-/*		
 	$bootstrap_config['jquery_js'] = $bootstrap_config['js_path'].'jquery-'.$bootstrap_config['jquery_version'].'.min.js';
-	$bootstrap_config['jquery-ui_js'] = $bootstrap_config['jquery-ui_path'].'jquery-ui.min.js';
-	$bootstrap_config['jquery-ui-i18n_js'] = $bootstrap_config['js_path'].'jquery-ui-i18n/datepicker-de.js';
-	$bootstrap_config['jquery-ui_css'] = $bootstrap_config['jquery-ui_path'].'jquery-ui.min.css';
-*/
+	$bootstrap_config['jqueryui_js'] = $bootstrap_config['jqueryui_path'].'jquery-ui.min.js';
+	$bootstrap_config['jqueryui_i18n_js'] = $bootstrap_config['js_path'].'jquery-ui-i18n/datepicker-de.js';
+	$bootstrap_config['jqueryui_css'] = $bootstrap_config['jqueryui_path'].'jquery-ui.min.css';
 }
 
 function bootstrap_head($title = '') {
@@ -185,7 +152,7 @@ function bootstrap_head($title = '') {
     <!-- Latest compiled and minified CSS -->
 <?php 
     echo "\t".bootstrap_css();
-    echo "\t".bootstrap_css('jquery-ui_css');
+    echo "\t".bootstrap_css('jqueryui_css');
  
 	if(is_array($bootstrap_config['local_css']) and count($bootstrap_config['local_css']) > 0) {
 		echo "\t<!-- Custom styles -->\n";
@@ -202,16 +169,13 @@ function bootstrap_foot() {
 	
 	$s = array();
 	
-	if(is_array($bootstrap_config['global_js']) and count($bootstrap_config['global_js']) > 0) {
-		foreach($bootstrap_config['global_js'] as $k => $v) {
-			if(is_string($k)) {
-				$s[] = '<!-- '.htmlspecialchars($k).' -->';
-			}
-			if(is_string($v)) {
-				$s[] =  bootstrap_js($v);
-			}
-		}
-	}
+	$s[] = "<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->";
+	$s[] =  bootstrap_js('jquery_js');
+	$s[] = "<!-- Latest compiled and minified JavaScript -->";
+	$s[] = bootstrap_js('js');
+	$s[] = "<!-- Include all compiled plugins (below), or include individual files as needed -->";
+	$s[] = bootstrap_js('jqueryui_js');
+	$s[] = bootstrap_js('jqueryui_i18n_js');
 
 	if(is_array($bootstrap_config['local_js']) and count($bootstrap_config['local_js']) > 0) {
 		foreach($bootstrap_config['local_js'] as $item) {
@@ -222,17 +186,6 @@ function bootstrap_foot() {
 	if(is_array($bootstrap_config['inline_js_vars']) and count($bootstrap_config['inline_js_vars']) > 0) {
 		$s[] = '<script type="text/javascript">';
 		foreach($bootstrap_config['inline_js_vars'] as $k => $v) {
-			if(is_string($v) and $v != 'null' and $v != 'true' and $v != 'false') {
-				$v = "'".str_replace("'", "\'",$v)."'";
-			} elseif(is_bool($v)) {
-				if($v) {
-					$v = 'true';
-				} else {
-					$v = 'false';
-				}
-			} elseif(is_null($v)) {
-				$v = 'null';
-			} 
 			$s[] = "\tvar ".$k.' = '.$v.';';
 		}
 		$s[] = '</script>';
