@@ -29,16 +29,34 @@
 	}
 	
 	function gwm_update_by_id($db, $table, $id, $data) {
-		
 		if(!is_int($id)) {
 			echo "UPDATE Error: Given ID is not an integer!\n";
 			return false;
-		} 
-			
+		}
+	
+		return gwm_update_by_prop($db, $table, array('id' => $id), $data, 1);
+	}
+	
+	function gwm_convert_date($value) {
+		$matches = array();
+		$ret = $value;
+		if(preg_match('/(\d{2})\.(\d{2})\.(\d{4})/', $value, $matches) == 1) {
+			$ret = $matches[3].'-'.$matches[2].'-'.$matches[1];
+		}
+		return $ret;
+	}
+	
+	function gwm_build_prop($data) {
+		
 		$sets = array();
 						
 		foreach($data as $k => $v) {			
-			if(is_string($v)) {
+			
+			if($v === true) {
+				$sets[] = "$k=TRUE";
+			} elseif($v === false) {
+				$sets[] = "$k=FALSE";
+			} elseif(is_string($v)) {
 				$sets[] = "$k='$v'";
 			} elseif(is_null($v)) {
 				$sets[] = "$k=NULL";
@@ -47,11 +65,34 @@
 			}						
 		}
 		
-		$q = 'UPDATE '.$table.' SET '.implode(', ', $sets).' WHERE id='.$id.' LIMIT 1';
+		return $sets;	
+	}
+	
+	function gwm_build_prop_string($data, $connector) {	
+		return implode(' '.$connector.' ', gwm_build_prop($data));		 
+	}
+		
+	function gwm_update_by_prop($db, $table, $prop, $data, $limit = null) {
+		
+		if(!is_array($prop)) {
+			echo "UPDATE Error: Given property is not an array!\n";
+			return false;
+		}
+				
+		$q = 'UPDATE '.$table.' SET '.gwm_build_prop_string($data, ',').' WHERE '.gwm_build_prop_string($prop, 'AND');
+		
+		if(is_int($limit)) {
+			$q.=' LIMIT '.$limit;
+		}
 				
 		$st = $db->stmt_init();		
 		$st->prepare($q);
-		return $st->execute();	
+		
+		if($st->execute()) {
+			return $st->affected_rows;
+		} else {
+			return false;
+		}
 	}
 	
 	function gwm_mapdata($data, $map) {
@@ -100,8 +141,13 @@
 		
 		$st = $db->stmt_init();		
 		$st->prepare($q);
-		$st->bind_param($bind, ...$values);			
-		return $st->execute();		
+		$st->bind_param($bind, ...$values);
+		
+		if($st->execute()) {
+			return $st->affected_rows;
+		} else {
+			return false;
+		}		
 	}
 
 ?>

@@ -53,6 +53,11 @@
 		margin-bottom: 0.5em;
 	}
 	
+	table.trefferliste td.is_dead {
+		color: grey;
+		font-style: italic;
+	} 
+	
 	table.anlage3, table.anlage3 td, table.anlage3 th {
 		font-size:107%;
 		/* line-height: 1.0; */

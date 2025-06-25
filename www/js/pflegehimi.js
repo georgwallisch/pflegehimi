@@ -580,9 +580,13 @@ function create_pg54(patient_id) {
 function patientensuche(output) {
 
 	let suchstring = $('#searchInput').val();
+	let deadcheck = $('#deadCheck').prop('checked')
 
 	let p = {'patientensuche':suchstring};
 	
+	if(deadcheck == true) {
+		p['includedead'] = '1';
+	}
 
 	if(suchstring.length < min_search_length) {
 		$(output).empty();
@@ -626,7 +630,7 @@ function generateTable(hitlist, column_map, params) {
 	//debug2box(hitlist);
 	
 	console.log('Params '+params+' ('+(typeof params)+')');
-	debug2box(params);
+	debug2box(hitlist);
 	
 	var table_attr = {};
 	
@@ -727,7 +731,9 @@ function generateTable(hitlist, column_map, params) {
 				console.log('Kein Enddatum vorhanden');
 			}
 			
-			if(valid) {
+			if(item['verstorben'] > 0) {
+				/*Verstorben!!*/
+			} else if(valid) {
 				let btn = $('<button>', {'type':'button', 'class':'btn btn-default btn-xs'}).appendTo(td).on("click",function() { 
 					create_pg54(item['id']);
 				});
@@ -751,6 +757,10 @@ function generateTable(hitlist, column_map, params) {
 					cval = 'Ja';
 					cc = {'class':'is_ja'};
 				}
+			}
+			
+			if(item['verstorben'] > 0) {
+				cc = {'class':'is_dead'};
 			}
 
 			$('<td>', cc).appendTo(tr).append(cval);
@@ -825,6 +835,10 @@ $(document).ready(function() {
 				console.log('Verzögere Suche um '+searchStartDelay+' ms.');
 
 		});
+		
+		sfd = $('<div>', {'class':'form-group form-check'}).appendTo(sf);
+		$('<input>', {'type':'checkbox', 'class':'form-check-input', 'id':'deadCheck'}).appendTo(sfd).on('change', function(){ patientensuche(ergebnis); });		
+		$('<label>', {'for':'deadCheck', 'class':'form-check-label'}).appendTo(sfd).append('Auch verstorbene Patienten anzeigen');
 		
 			var info = $('<div>', {'class':'container mt-4','id':'c_info'}).appendTo(mainbox);
 		$('<p>').appendTo(info).append('Es sind '+count_patienten+' Patienten vorhanden.');

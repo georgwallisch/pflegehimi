@@ -69,7 +69,7 @@
 	$st = null;
 	
 	//$q = 'SELECT patienten.*, DATE_FORMAT(geb,\''.$db_date_format.'\') AS geb, pflegekasse.ik as pk_ik, pflegekasse.name as pk_name FROM patienten, pflegekasse LEFT JOIN gen_pg54 ON gen_pg54.patient_id=patienten.id WHERE patienten.pflegekasse_id=pflegekasse.id AND LOWER (patienten.name) LIKE \''.$ss."'"
-	$q = 'SELECT p.*, DATE_FORMAT(p.geb,\''.$db_date_format.'\') AS geb, DATE_FORMAT(p.verstorben,\''.$db_date_format.'\') AS verstorben, '; 
+	$q = 'SELECT p.*, DATE_FORMAT(p.geb,\''.$db_date_format.'\') AS geb, DATE_FORMAT(p.sterbedatum,\''.$db_date_format.'\') AS sterbedatum, '; 
 	$q .= 'k.ik AS pk_ik, k.name AS pk_name, ';
 	//$q .= 'g.kz AS gen_pg54, DATE_FORMAT(g.start,\''.$db_date_format.'\') AS pg54_start, DATE_FORMAT(g.end,\''.$db_date_format.'\') AS pg54_ende ';
 	$q .= 'g.kz AS gen_pg54, g.start AS pg54_start, g.end AS pg54_ende ';
@@ -83,6 +83,9 @@
 		
 		$ss = str_replace($search, $replace, strtolower($s)).'%';
 		$q .= 'WHERE LOWER (p.name) LIKE ?';
+		if(is_null(get_value('includedead'))) {
+			$q .= ' AND p.verstorben <> 1';
+		}
 		$st = $db->prepare($q.$o);
 		$st->bind_param('s', $ss);
 		$reply['search_type'] = 'patient';
@@ -97,12 +100,14 @@
 			$reply['search_type'] = 'patient';
 		} else {
 			//$st = $db->prepare('SELECT patienten.*, DATE_FORMAT(geb,\''.$db_date_format.'\') AS geb, pflegekasse.ik as pk_ik, pflegekasse.name as pk_name FROM patienten INNER JOIN pflegekasse ON patienten.pflegekasse_id=pflegekasse.id);
-			$st = $db->prepare($q.$o);
+			$q .= $o;
+			$st = $db->prepare($q);
 			$reply['search_type'] = 'patientenliste';
 		}	
 	
 	} else {
-		$st = $db->prepare('SELECT COUNT(*) AS count_patienten FROM patienten');
+		$q = 'SELECT COUNT(*) AS count_patienten FROM patienten';
+		$st = $db->prepare($q);
 		$reply['search_type'] = 'info';
 	}
 	
@@ -110,7 +115,9 @@
 		send_reply(array('error' => 'MySQL Syntax Error', 'MySQL Error Details' => $db->error));
 		
 	} elseif (!is_null($st)) {
-		
+		if($debugmode) {
+			$reply['query'] = $q;
+		}
 		$reply['search'] = $s;
 		$reply['apo'] = $apotheke;
 		$st->execute();

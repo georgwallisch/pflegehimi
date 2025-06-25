@@ -7,23 +7,42 @@
 	$st_insert_pflegekasse = $db->prepare('INSERT INTO pflegekasse ('.implode(',',array_keys($pflegekasse_felder)).') VALUES (?'.str_repeat(',?', count($pflegekasse_felder) - 1).')');
 	*/
 	
-	if(VERBOSE) echo "*** VERBOSE Mode ***\n";
+	if(VERBOSE) echo "\n*** VERBOSE Mode ***\n";
 	
-	echo "*** PflegeHiMI Import ***\n";
-	echo "Lade aus {$csvdir} ..\n";
+	echo "\n*** PflegeHiMI Import ***\n";
 	
-	if($dh = opendir($csvdir)) {
+	if($argc < 2) {
+	
+		echo "\nUSAGE: ".$argv[0]." file1.csv [file2.csv] [file3.csv] [..]\n";
+		echo "\nfile[n].csv must be located in {$csvdir}\n\n";
+		exit(1);	
+	}
 		
-		while(false !== ($entry = readdir($dh))) {
-			if($entry[0] == '.') continue;
-			
-			$filepath = $csvdir.'/'.$entry;
-			if(is_file($filepath) and is_readable($filepath)) {
-				
-				$path_parts = pathinfo($filepath);
-				
-				if($path_parts['extension'] != 'csv') continue;
-				
+	$files = array();
+	
+	echo "\nCSV source directory is {$csvdir}\n";
+	
+	for($i = 1; $i < $argc; $i++) {
+
+		$f = $argv[$i];
+		$filepath = $csvdir.'/'.$f;
+		
+		if(VERBOSE) echo "Opening $f ..\n";
+		
+		if(is_file($filepath) and is_readable($filepath)) {
+			$path_parts = pathinfo($filepath);
+			if($path_parts['extension'] != 'csv') {
+				if(VERBOSE) echo $f." is not a CSV file!!\n";
+				continue;
+			}
+			$files[] = $filepath;
+		} else {
+			echo "Cannot access $f or it is not a valid file!\n";
+		}
+	}
+
+	foreach($files as $filepath) {
+	
 				$importcounter = 0;
 				$newcounter = 0;
 				
@@ -86,9 +105,7 @@
 						$key = $v;
 						
 						// Datumsangaben auf Mysql DATE umformatieren
-						if(preg_match('/(\d{2})\.(\d{2})\.(\d{4})/', $value, $matches) == 1) {
-							$value = $matches[3].'-'.$matches[2].'-'.$matches[1];
-						}
+						$value = gwm_convert_date($value);
 						
 						if($key == 'vsnr') {
 							if(!preg_match('/\w\d{9}/', $value)) {
@@ -182,14 +199,7 @@
 				fclose($fp);
 						
 				echo "..fertig: {$importcounter} Zeilen eingelesen und {$newcounter} Datensätze neu eingepflegt!\n";
-			} 
-			
-		}
-
-		closedir($dh);
-	} else {
-		echo "FEHLER: Kann {$csvdir} nicht auslesen!";
-		exit(1);
-	}	
+	
+	}
 	
 ?>
