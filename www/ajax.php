@@ -60,9 +60,14 @@
 	ob_start();
 	
 	require_once '../config.php';
-	
+	//*
 	$search  = array('*', '?', ' ');
 	$replace = array('%', '_', '%');
+	/*
+	
+	$search  = array('*', '?');
+	$replace = array('%', '_');
+	// */
 	
 	$reply = array();
 	
@@ -79,15 +84,19 @@
 	
 	$o = ' ORDER BY p.name, p.vorname, p.vsnr';
 
-	if(!is_null($s = get_value('patientensuche'))) {
+	if(!is_null($s = trim(get_value('patientensuche'))) and strlen($s) > 0) {
 		
 		$ss = str_replace($search, $replace, strtolower($s)).'%';
-		$q .= 'WHERE LOWER (p.name) LIKE ?';
+			
+		$b = 's';
+		$q .= 'WHERE ';
+		$q .= 'LOWER (p.name) LIKE ?';
 		if(is_null(get_value('includedead'))) {
 			$q .= ' AND p.verstorben <> 1';
 		}
-		$st = $db->prepare($q.$o);
-		$st->bind_param('s', $ss);
+		$q .= $o;
+		$st = $db->prepare($q);
+		$st->bind_param($b, $ss);
 		$reply['search_type'] = 'patient';
 	
 	} elseif(!is_null($s = get_value('patient'))) {
@@ -117,6 +126,7 @@
 	} elseif (!is_null($st)) {
 		if($debugmode) {
 			$reply['query'] = $q;
+			$reply['searchstring'] = $ss;
 		}
 		$reply['search'] = $s;
 		$reply['apo'] = $apotheke;

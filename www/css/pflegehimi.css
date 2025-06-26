@@ -21,11 +21,15 @@
 	  font-weight:bold;
 	  font-size:150%;
 	}
-	
+
 	.plus-button::before {
-	  content: "+";  
+	  content: "\a0";
+	  background: url("https://intern.apotheke-schug.de/img/bootstrap-icons/file-earmark-plus.svg");
+	  background-size: 100% 100%;
+	  width: 25px;
+	  display:block;
 	}
-	
+
 	.button-bar {
 		padding: 0.5em;
 		left: 25%;

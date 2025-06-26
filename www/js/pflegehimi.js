@@ -1,6 +1,6 @@
 const ajax_url = "ajax.php";
 
-var min_search_length = 0;
+var min_search_length = 1;
 var searchStartTimeout = null;
 const searchStartDelay = 300;
 
@@ -601,11 +601,12 @@ function patientensuche(output) {
 	
 	getAjax(p).done(function (r) {
 			$(output).empty();
+			debug2box(r, "AJAX-Ergebnis für '"+suchstring+"'");
 			if(typeof r['error'] == 'string') {
 				 $('<p>', {'class':'text-warning'}).append(r['error']).appendTo(output);
 				 return;
 			}		
-			if(r['found'] > 0 ) {
+			if(r['search_type'] == "patient" && r['found'] > 0 ) {
 				$('<p>', {'class':'text-info'}).append(r['found']+' Treffer:').appendTo(output);
 				
 				var cols = {'name':'Name', 'vorname':'Vorname', 'geb':'Geb.Dat.', 'pk_ik':'IK', 'pk_name':'Pflegekasse'};
@@ -630,7 +631,7 @@ function generateTable(hitlist, column_map, params) {
 	//debug2box(hitlist);
 	
 	console.log('Params '+params+' ('+(typeof params)+')');
-	debug2box(hitlist);
+	//debug2box(hitlist, "Suchtrefferliste");
 	
 	var table_attr = {};
 	
