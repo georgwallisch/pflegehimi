@@ -55,15 +55,15 @@
 	
 	/* main code starts here */
 
-
+try {
 	
 	ob_start();
 	
 	require_once '../config.php';
-	//*
+	/*
 	$search  = array('*', '?', ' ');
 	$replace = array('%', '_', '%');
-	/*
+	*/
 	
 	$search  = array('*', '?');
 	$replace = array('%', '_');
@@ -86,17 +86,26 @@
 
 	if(!is_null($s = trim(get_value('patientensuche'))) and strlen($s) > 0) {
 		
-		$ss = str_replace($search, $replace, strtolower($s)).'%';
+		$ss = str_replace($search, $replace, strtolower($s));
+		$sa = explode(' ',$ss);
 			
-		$b = 's';
+		$b = '';
 		$q .= 'WHERE ';
-		$q .= 'LOWER (p.name) LIKE ?';
+		$c = array();
+		$d = array();
+		for($i = 0; $i < count($sa); ++$i) {
+			$c[] = '(LOWER (p.name) LIKE ? OR LOWER (p.vorname) LIKE ?)';
+			$d[] = $sa[$i].'%';
+			$d[] = $sa[$i].'%'; // !!
+			$b .= 'ss';
+		}
+		$q .= implode(' AND ', $c);
 		if(is_null(get_value('includedead'))) {
 			$q .= ' AND p.verstorben <> 1';
 		}
 		$q .= $o;
 		$st = $db->prepare($q);
-		$st->bind_param($b, $ss);
+		$st->bind_param($b, ...$d);
 		$reply['search_type'] = 'patient';
 	
 	} elseif(!is_null($s = get_value('patient'))) {
@@ -127,6 +136,7 @@
 		if($debugmode) {
 			$reply['query'] = $q;
 			$reply['searchstring'] = $ss;
+			$reply['params'] = $d;
 		}
 		$reply['search'] = $s;
 		$reply['apo'] = $apotheke;
@@ -146,4 +156,15 @@
 	}
 	
 	ob_end_clean();
+} catch (Exception $e) {
+	ob_end_clean();
+	header("Content-type: text/plain; charset=utf-8");
+	echo "mysqli-Error: ".$e->getMessage();
+	echo "\n\nQuery was:\n\n".$q;
+	echo "\n\nParam signature was:\n\n".$b;
+	echo "\n\nParams were:\n\n";
+	print_r($d);
+    exit(1);
+}
+
 ?>
