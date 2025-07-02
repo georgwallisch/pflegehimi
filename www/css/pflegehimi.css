@@ -57,18 +57,32 @@
 		margin-bottom: 0.5em;
 	}
 	
+	table.anlage3 th.anlage3 span.nettopreis {
+		padding-left: 1em;
+	}
+	
+	span.nettopreis {
+		font-size: 60%;
+	}
+	
 	table.trefferliste td.is_dead {
 		color: grey;
 		font-style: italic;
 	} 
 	
 	table.anlage3, table.anlage3 td, table.anlage3 th {
-		font-size:107%;
+		font-size:110%;
+		/* DEBUG */
+		/* border: 2px solid pink; */
 		/* line-height: 1.0; */
 	}
 	
-	table.anlage3 td {
-		padding: 1em 0 0 0;
+	table.anlage3 td.anlage3_head {
+		padding: 0.75em 0 0 0;
+	}
+	
+	table.anlage3 .anlage3_total_patient, table.anlage3 .anlage3_sum_patient {
+		padding: 0.75em 0 0 0;
 	}
 	
 	input.input_betrag, input.input_menge {
@@ -96,21 +110,41 @@
 			padding-top: 0;			
 	}	
 	
+	table.anlage3 .anlage3_total_kasse, table.anlage3 .anlage3_sum_kasse,
 	table.anlage3 td.anlage3_sum_eigen54 {
 		padding-bottom: 0.5em;
 	}
 	
+	table.anlage3 td.anlage3_bez .anlage3_bez_info {
+		font-size: 85%;
+	}
 		
 	table.anlage3 th.anlage3_title, table.anlage3 th.anlage3_subtitle {
+		font-size:100%;
+		/* text-align:center; */
+	}
+	table.anlage3 th.anlage3_subtitle {
 		text-align:center;
 	}
+		
+	table.anlage3 th span.anlage3_title {
+		float:left;
+		display:inline;	
+	}
 	
-	table.anlage3 td.anlage3_col4, table.anlage3 th.anlage3_actk {
+	table.anlage3 th span.anlage3_actk {
+		float:right;
+		display:inline;	
+	}
+		
+	table.anlage3 th.anlage3_rightcol, table.anlage3 td.anlage3_rightcol,
+	table.anlage3 th.anlage3_menge, table.anlage3 th.anlage3_preis,
+	table.anlage3 td.anlage3_preis {
 		text-align:right;
 	}
 	
 	table.anlage3 td.anlage3_label {
-		font-size:65%;
+		font-size:55%;
 		padding-top:0;
 	}
 	
@@ -121,6 +155,8 @@
 	
 	table.anlage3 td.anlage3_p {
 		font-size:77%;
+		line-height: 1.1;
+		padding: 1.5em 0 0 0;
 	}
 	
 	table.anlage3 td.anlage3_footnote {
@@ -188,6 +224,9 @@
 		margin-left: 2cm;
 	}
 	
+	table.anlage3 td.anlage3_menge {
+		text-align:right;
+	}
 
 	
 /*	

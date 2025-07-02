@@ -3,6 +3,8 @@ const ajax_url = "ajax.php";
 var min_search_length = 1;
 var searchStartTimeout = null;
 const searchStartDelay = 300;
+const printonly = {'class':'d-none d-print-table-row'};
+const default_input_size = 7;
 
 var apo = null;
 
@@ -31,7 +33,7 @@ const quickies = [
 ];
 
 const pflegehimi51 = [
-	{'bez':'Bettschutzeinlagen wiederverwendbar', 'hpn':'51.40.01.4', 'ep':22.0, 'q':'St', 'f':1}
+	{'bez':'Bettschutzeinlagen','info':'wiederverwendbar', 'hpn':'51.40.01.4', 'ep':22.0, 'q':'St', 'f':1}
 ];
 
 const pg54max = 42.0;
@@ -159,6 +161,15 @@ function setAmount(id, a) {
 	}
 }
 
+function setNetto(id, a) {
+	if(isNaN(a)) { a = 0; }
+	if(a > 0) {
+		$(id).data('amount', a).html('('+a.toFixed(2).replace('.',',')+')');
+	} else {
+		$(id).data('amount', 0).html('');
+	}
+}
+
 function getAmount(id) {	
 	let a = $(id).data('amount');
 	if(isNaN(a)) { return 0; }
@@ -200,14 +211,18 @@ function getCheck(id) {
 
 function sumup54() {
 	var sum = 0;
+	var netto = 0;
 	
 	for(let i in pflegehimi54) {
 		let himi = pflegehimi54[i];
 		hpnid = 'hpn_'+himi['hpn'].replaceAll('.','');
-		sum += $('#'+hpnid+'_preis').data('amount');
+	//	sum += $('#'+hpnid+'_preis').data('amount');
+		sum += getAmount('#'+hpnid+'_preis');
+		netto += getAmount('#'+hpnid+'_nettopreis');
 	}
 	
-	setAmount('#input_summe54', sum);		
+	setAmount('#input_summe54', sum);
+	setNetto('#pg54_nettogesamtpreis', netto);
 
 	var diff = sum - pg54max;
 	
@@ -218,28 +233,7 @@ function sumup54() {
 	}
 	
 	setAmount('#input_eigen54', diff);
-	
 	sumupall();
-	
-	/*
-	$.when(
-		$('input.input_preis_54').each(function(i, obj) {
-				sum += $(obj).data('amount');
-				console.log('Lfd. Summe: '+sum);
-		})
-		
-	).then(function() {
-		$('#input_summe54').val(String(sum).replace('.',','));
-		console.log('PG54 Summe: '+sum);
-		var diff = sum - pg54max;
-			if(diff > 0) {
-				$('#input_eigen54').val(String(diff).replace('.',','));
-			} else {
-				$('#input_eigen54').val('');
-			}
-	});
-	*/
-
 }
 
 function quickadd(hpnid, me) {
@@ -290,12 +284,18 @@ function recalc(obj, group) {
 		}					
 	}
 	
+	if(intval == 0) {
+		o.val('');
+	}
+	
 	let netto = $(obj).data('ep') * intval;
 	
 	let tax = Math.round(netto * mwst * 100.0)/100.0;
 	let brutto = netto + tax;
 	
 	setAmount('#'+hpnid+'_preis',brutto);
+	setNetto('#'+hpnid+'_nettopreis',netto);
+	
 	if(group = '54') {
 		sumup54();
 	} else {
@@ -313,7 +313,14 @@ function himi_inputform(data, out) {
 		let arr = himi['hpn'].split('.');
 		let group = arr[0];
 		
-		$('<td>',{'class':'anlage3 anlage3_col anlage3_bez'}).appendTo(tr).append(himi['bez']);
+		let bez = $('<td>',{'class':'anlage3 anlage3_col anlage3_bez'}).appendTo(tr).append(himi['bez']);
+		
+		if(typeof himi['info'] == 'string') {
+			bez.append('&nbsp;');
+			$('<span>', {'class':'anlage3_bez_info'}).appendTo(bez).append(himi['info']);
+		}
+		
+		$('<td>',{'class':'anlage3 anlage3_col anlage3_netto'}).appendTo(tr).append($('<span>',{'class':'nettopreis d-none d-print-inline','id':hpnid+'_nettopreis'}));
 		$('<td>',{'class':'anlage3 anlage3_col anlage3_hpn'}).appendTo(tr).append(himi['hpn']);
 		
 		let me = $('<td>',{'class':'anlage3 anlage3_col anlage3_menge'}).appendTo(tr);
@@ -335,7 +342,7 @@ function himi_inputform(data, out) {
 		
 		eur( 
 			$('<td>',{'class':'anlage3 anlage3_col anlage3_preis'}).appendTo(tr).append(
-				input(null,'input_betrag input_preis_'+group,hpnid+'_preis', 10, true).data('amount',0)
+				input(null,'input_betrag input_preis_'+group,hpnid+'_preis', null, true).data('amount',0)
 			)
 		);
 	}
@@ -351,7 +358,7 @@ function eur(target) {
 
 function input(target, css, id, size, readonly) {
 	
-	let a = {'type':'text', 'size':'10'}
+	let a = {'type':'text', 'size':default_input_size};
 	
 	if(typeof css == 'string') {
 		a['class'] = css;
@@ -380,7 +387,7 @@ function input(target, css, id, size, readonly) {
 
 function check(target, css, id, value, label, ischecked) {
 	
-	let a = {'type':'checkbox'}
+	let a = {'type':'checkbox'};
 	
 	if(typeof ischecked != 'boolean') {
 		ischecked = false;
@@ -416,6 +423,26 @@ function check(target, css, id, value, label, ischecked) {
 	return d;
 }
 
+function tdspacer(target, colspan, classes) {
+	
+	let a = {'class':'anlage3 anlage3_spacer'};
+	
+	if(typeof classes == 'string') {
+		a['class'] = classes;
+	}
+	
+	if(typeof colspan == 'number') {
+		a['colspan'] = colspan;
+	}
+	
+	let d = $('<td>', a).append('&nbsp;');
+	
+	if(typeof target == 'object') {
+		d.appendTo(target);
+	}
+		
+	return d;
+}
 
 function create_pg54(patient_id) {
 	
@@ -474,105 +501,108 @@ function create_pg54(patient_id) {
 		}
 	*/	
 		const date = new Date();
-		const printonly = {'class':'d-none d-print-table-row'};
-		
+	
 		var anlage = $('<table>', {'class':'anlage3'}).appendTo(maincol);
 		
 		var tr = $('<tr>', printonly).appendTo(anlage);
-		$('<th>',{'class':'anlage3 anlage3_title','colspan':'3'}).appendTo(tr).append('Anlage 3 - Erklärung zum Erhalt von Pflegehilfsmitteln (Empfangsbestätigung');
-		$('<th>',{'class':'anlage3 anlage3_act anlage3_col4'}).appendTo(tr).append('AC/TK: 11/00/P53');
+		$('<th>',{'class':'anlage3 anlage3_head anlage3_title','colspan':'5'}).appendTo(tr)
+		.append($('<span>',{'class':'anlage3 anlage3_head anlage3_title'}).append('Anlage 3 - Erklärung zum Erhalt von Pflegehilfsmitteln (Empfangsbestätigung)'))
+		.append($('<span>',{'class':'anlage3 anlage3_head anlage3_actk'}).append('AC/TK: 11/00/P53'));
 		
 		tr = $('<tr>', printonly).appendTo(anlage);
-		$('<th>',{'class':'anlage3 anlage3_subtitle','colspan':'4'}).appendTo(tr).append('- Zum Verbleib in der Apotheke -');
+		$('<th>',{'class':'anlage3 anlage3_head anlage3_subtitle','colspan':'5'}).appendTo(tr).append('- Zum Verbleib in der Apotheke -');
 		
 		tr = $('<tr>').appendTo(anlage);
-		$('<td>',{'class':'anlage3 anlage3_data','colspan':'2'}).appendTo(tr).append(pat['pk_ik'] + ' '+ pat['pk_name']);
-		$('<td>',{'class':'anlage3 anlage3_data'}).appendTo(tr).append(pat['vsnr']);
-		$('<td>',{'class':'anlage3 anlage3_data anlage3_vsdate anlage3_col4'}).appendTo(tr).append((date.getMonth() < 9 ? '0':'')+(date.getMonth()+1)+'/'+date.getFullYear());
+		$('<td>',{'class':'anlage3 anlage3_head anlage3_data','colspan':'3'}).appendTo(tr).append(pat['pk_ik'] + ' '+ pat['pk_name']);
+		$('<td>',{'class':'anlage3 anlage3_head anlage3_data'}).appendTo(tr).append(pat['vsnr']);
+		$('<td>',{'class':'anlage3 anlage3_head anlage3_data anlage3_vsdate anlage3_rightcol'}).appendTo(tr).append((date.getMonth() < 9 ? '0':'')+(date.getMonth()+1)+'/'+date.getFullYear());
 		
 		tr = $('<tr>', printonly).appendTo(anlage);
-		$('<td>',{'class':'anlage3 anlage3_label','colspan':'2'}).appendTo(tr).append('IK und Name der Pflegekasse');
-		$('<td>',{'class':'anlage3 anlage3_label'}).appendTo(tr).append('Versichertennummer');
-		$('<td>',{'class':'anlage3 anlage3_label anlage3_col4'}).appendTo(tr).append('Versorgungsmonat');
+		$('<td>',{'class':'anlage3 anlage3_head anlage3_label','colspan':'3'}).appendTo(tr).append('IK und Name der Pflegekasse');
+		$('<td>',{'class':'anlage3 anlage3_head anlage3_label'}).appendTo(tr).append('Versichertennummer');
+		$('<td>',{'class':'anlage3 anlage3_head anlage3_label anlage3_rightcol'}).appendTo(tr).append('Versorgungsmonat');
 		
 		tr = $('<tr>').appendTo(anlage);
-		$('<td>',{'class':'anlage3 anlage3_data','colspan':'3'}).appendTo(tr).append(pat['name'] + ', '+ pat['vorname']);
-		$('<td>',{'class':'anlage3 anlage3_data anlage3_col4'}).appendTo(tr).append(pat['geb']);
+		$('<td>',{'class':'anlage3 anlage3_head anlage3_data','colspan':'4'}).appendTo(tr).append(pat['name'] + ', '+ pat['vorname']);
+		$('<td>',{'class':'anlage3 anlage3_head anlage3_data anlage3_rightcol'}).appendTo(tr).append(pat['geb']);
 		
 		tr = $('<tr>', printonly).appendTo(anlage);
-		$('<td>',{'class':'anlage3 anlage3_label','colspan':'3'}).appendTo(tr).append('Name des Versicherten, ggf. eines Ansprechpartners');
-		$('<td>',{'class':'anlage3 anlage3_label anlage3_col4'}).appendTo(tr).append('Geburtsdatum');
+		$('<td>',{'class':'anlage3 anlage3_head anlage3_label','colspan':'4'}).appendTo(tr).append('Name des Versicherten, ggf. eines Ansprechpartners');
+		$('<td>',{'class':'anlage3 anlage3_head anlage3_label anlage3_rightcol'}).appendTo(tr).append('Geburtsdatum');
 					
 		tr = $('<tr>').appendTo(anlage);
-		$('<td>',{'class':'anlage3 anlage3_data','colspan':'3'}).appendTo(tr).append(pat['adresse'] + ', '+ pat['plz'] + ' '+ pat['ort']);
-		$('<td>',{'class':'anlage3 anlage3_data anlage3_col4'}).appendTo(tr).append(pat['gen_pg54']);
+		$('<td>',{'class':'anlage3 anlage3_head anlage3_data','colspan':'3'}).appendTo(tr).append(pat['adresse'] + ', '+ pat['plz'] + ' '+ pat['ort']);
+		$('<td>',{'class':'anlage3 anlage3_head anlage3_data anlage3_rightcol','colspan':'2'}).appendTo(tr).append(pat['gen_pg54']);
 		
 		tr = $('<tr>', printonly).appendTo(anlage);
-		$('<td>',{'class':'anlage3 anlage3_label','colspan':'3'}).appendTo(tr).append('Anschrift des Versicherten, ggf. eines Ansprechpartners');
-		$('<td>',{'class':'anlage3 anlage3_label anlage3_col4'}).appendTo(tr).append('Genehmigungskennzeichen');
+		$('<td>',{'class':'anlage3 anlage3_head anlage3_label','colspan':'3'}).appendTo(tr).append('Anschrift des Versicherten, ggf. eines Ansprechpartners');
+		$('<td>',{'class':'anlage3 anlage3_head anlage3_label anlage3_rightcol','colspan':'2'}).appendTo(tr).append('Genehmigungskennzeichen');
 				
 		tr = $('<tr>', printonly).appendTo(anlage);
-		$('<td>',{'class':'anlage3 anlage3_data','colspan':'4'}).appendTo(tr).append(apo['ik'] + ' ' + apo['name'] + ', ' + apo['adresse'] + ', ' + apo['plz'] + ' ' + apo['ort']);
+		$('<td>',{'class':'anlage3 anlage3_head anlage3_data','colspan':'5'}).appendTo(tr).append(apo['ik'] + ' ' + apo['name'] + ', ' + apo['adresse'] + ', ' + apo['plz'] + ' ' + apo['ort'] + ', ' + apo['tel']);
 		
 		tr = $('<tr>', printonly).appendTo(anlage);
-		$('<td>',{'class':'anlage3 anlage3_label','colspan':'4'}).appendTo(tr).append('IK, Name und Adresse der Apotheke');
+		$('<td>',{'class':'anlage3 anlage3_head anlage3_label','colspan':'5'}).appendTo(tr).append('IK, Name und Adresse der Apotheke, Telefon');
 		
 		tr = $('<tr>', printonly).appendTo(anlage);
-		$('<td>',{'class':'anlage3 anlage3_p','colspan':'4'}).appendTo(tr).append('Die zuvor genannte Apotheke hat mir heute im augenscheinlich hygienischen und einwandfreien Zustand nachfolgend aufgeführte Pflegehilfsmittel übergeben sowie mich – soweit erforderlich – in den Gebrauch des Pflegehilfsmittels eingewiesen.');
+		$('<td>',{'class':'anlage3 anlage3_p','colspan':'5'}).appendTo(tr).append('Die zuvor genannte Apotheke hat mir heute im augenscheinlich hygienischen und einwandfreien Zustand nachfolgend aufgeführte Pflegehilfsmittel übergeben sowie mich – soweit erforderlich – in den Gebrauch des Pflegehilfsmittels eingewiesen.');
 		
 		tr = $('<tr>').appendTo(anlage);
-		$('<th>',{'class':'anlage3 anlage3_col'}).appendTo(tr).append('Bezeichnung');
-		$('<th>',{'class':'anlage3 anlage3_col'}).appendTo(tr).append('Pflegehilfsmittel-<br/>positionsnummer');
-		$('<th>',{'class':'anlage3 anlage3_col'}).appendTo(tr).append('Menge<br/>St/100ml');
-		$('<th>',{'class':'anlage3 anlage3_col'}).appendTo(tr).append('Gesamtpreis<br/>mit MwSt. in €');
 		
+		$('<th>',{'class':'anlage3 anlage3_col anlage3_bez'}).appendTo(tr).append('Bezeichnung').append($('<span>',{'class':'nettopreis d-none d-print-inline'}).append('(Nettogesamtpreis in &euro;)'));
+		$('<th>',{'class':'anlage3 anlage3_col'}).appendTo(tr).html('&nbsp;');
+		$('<th>',{'class':'anlage3 anlage3_col anlage3_posnr'}).appendTo(tr).append('Pflegehilfsmittel-<br/>positionsnummer');
+		$('<th>',{'class':'anlage3 anlage3_col anlage3_menge'}).appendTo(tr).append('Menge<br/>St/100ml');
+		$('<th>',{'class':'anlage3 anlage3_col anlage3_preis anlage3_rightcol'}).appendTo(tr).append('Gesamtpreis<br/>mit MwSt. in €');
 		
 		himi_inputform(pflegehimi54, anlage);
 				
 		tr = $('<tr>').appendTo(anlage);
-		$('<td>',{'class':'anlage3 anlage3_spacer','colspan':'4'}).appendTo(tr).append('&nbsp;');
-		
-		tr = $('<tr>').appendTo(anlage);
-		$('<td>',{'class':'anlage3 anlage3_sum anlage3_sum_summe54','colspan':'3'}).appendTo(tr).append('Gesamtsumme PG 54');
-		eur( $('<td>',{'class':'anlage3 anlage3_sum anlage3_sum_summe54'}).appendTo(tr).append(input(null,'input_betrag input_summe54','input_summe54', 10, true)) );
-		
-		tr = $('<tr>').appendTo(anlage);
-		$('<td>',{'class':'anlage3 anlage3_sum anlage3_sum_eigen54','colspan':'3'}).appendTo(tr).append('Eigenbeteiligung PG 54');
-		eur($('<td>',{'class':'anlage3 anlage3_sum anlage3_sum_eigen54'}).appendTo(tr).append(input(null,'input_betrag input_eigen54','input_eigen54', 10, true)) );
+		tdspacer(tr, 5);
 				
 		tr = $('<tr>').appendTo(anlage);
-		$('<td>',{'class':'anlage3 anlage3_spacer','colspan':'4'}).appendTo(tr).append('&nbsp;');
+		$('<td>',{'class':'anlage3 anlage3_sum anlage3_sum_summe54'}).appendTo(tr).append('Gesamtsumme PG 54');
+		$('<td>',{'class':'anlage3 anlage3_col'}).appendTo(tr).append($('<span>',{'class':'nettopreis d-none d-print-inline','id':'pg54_nettogesamtpreis'}));
+		tdspacer(tr, 2);		
+		eur( $('<td>',{'class':'anlage3 anlage3_sum anlage3_sum_summe54 anlage3_rightcol'}).appendTo(tr).append(input(null,'input_betrag input_summe54','input_summe54', null, true)) );
 		
+		tr = $('<tr>').appendTo(anlage);
+		$('<td>',{'class':'anlage3 anlage3_sum anlage3_sum_eigen54','colspan':'4'}).appendTo(tr).append('Eigenbeteiligung PG 54');
+		eur($('<td>',{'class':'anlage3 anlage3_sum anlage3_sum_eigen54 anlage3_rightcol'}).appendTo(tr).append(input(null,'input_betrag input_eigen54','input_eigen54', null, true)) );
+				
+		tr = $('<tr>').appendTo(anlage);
+		tdspacer(tr, 5);
+				
 		himi_inputform(pflegehimi51, anlage);
 	
 		tr = $('<tr>').appendTo(anlage);
-		$('<td>',{'class':'anlage3 anlage3_check','colspan':'3'}).appendTo(tr).append( check(null, 'anlage3_check', 'check_zuzahlung_pg54', '1', 'Zuzahlung PG 51', true).on('change', function() { console.log('Änderung Zuzahlung'); sumupall(); } ));
-		eur( $('<td>',{'class':'anlage3 anlage3_sum'}).appendTo(tr).append( input(null,'input_betrag input_zuzahlung','input_zuzahlung', 10, true)) );
+		$('<td>',{'class':'anlage3 anlage3_check','colspan':'4'}).appendTo(tr).append( check(null, 'anlage3_check', 'check_zuzahlung_pg54', '1', 'Zuzahlung PG 51', true).on('change', function() { console.log('Änderung Zuzahlung'); sumupall(); } ));
+		eur( $('<td>',{'class':'anlage3 anlage3_sum anlage3_rightcol'}).appendTo(tr).append( input(null,'input_betrag input_zuzahlung','input_zuzahlung', null, true)) );
 		
 		tr = $('<tr>').appendTo(anlage);
-		$('<td>',{'class':'anlage3 anlage3_check','colspan':'3'}).appendTo(tr).append( check(null, 'anlage3_check', 'check_beihilfe', '1', 'Beihilfe').on('change', function() { console.log('Änderung Beihilfe'); sumupall(); } ));
-		eur( $('<td>',{'class':'anlage3 anlage3_sum'}).appendTo(tr).append( input(null,'input_betrag input_beihilfe','input_beihilfe', 10, true)) );
+		$('<td>',{'class':'anlage3 anlage3_check','colspan':'4'}).appendTo(tr).append( check(null, 'anlage3_check', 'check_beihilfe', '1', 'Beihilfe').on('change', function() { console.log('Änderung Beihilfe'); sumupall(); } ));
+		eur( $('<td>',{'class':'anlage3 anlage3_sum anlage3_rightcol'}).appendTo(tr).append( input(null,'input_betrag input_beihilfe','input_beihilfe', null, true)) );
 		
 		tr = $('<tr>').appendTo(anlage);
-		$('<th>',{'class':'anlage3 anlage3_total anlage3_total_patient','colspan':'3'}).appendTo(tr).append('Zahlbetrag Patient');
-		eur( $('<td>',{'class':'anlage3 anlage3_sum anlage3_sum_patient'}).appendTo(tr).append(input(null,'input_betrag input_patient','input_patient', 10, true)) );
+		$('<th>',{'class':'anlage3 anlage3_total anlage3_total_patient','colspan':'4'}).appendTo(tr).append('Zahlbetrag Patient');
+		eur( $('<td>',{'class':'anlage3 anlage3_sum anlage3_sum_patient anlage3_rightcol'}).appendTo(tr).append(input(null,'input_betrag input_patient','input_patient', null, true)) );
 		
 		tr = $('<tr>').appendTo(anlage);
-		$('<th>',{'class':'anlage3 anlage3_total anlage3_total_kasse','colspan':'3'}).appendTo(tr).append('Zahlbetrag Kasse');
-		eur( $('<td>',{'class':'anlage3 anlage3_sum anlage3_sum_kasse'}).appendTo(tr).append(input(null,'input_betrag input_kasse','input_kasse', 10, true)) );
+		$('<th>',{'class':'anlage3 anlage3_total anlage3_total_kasse','colspan':'4'}).appendTo(tr).append('Zahlbetrag Kasse');
+		eur( $('<td>',{'class':'anlage3 anlage3_sum anlage3_sum_kasse anlage3_rightcol'}).appendTo(tr).append(input(null,'input_betrag input_kasse','input_kasse', null, true)) );
 		
 		tr = $('<tr>', printonly).appendTo(anlage);
-		$('<td>',{'class':'anlage3 anlage3_p','colspan':'4'}).appendTo(tr).append('Ich darf die überlassenen Pflegehilfsmittel keinem Dritten verleihen, übereignen oder verpfänden. Ich bin darüber aufgeklärt worden, dass die Pflegekasse die Kosten nur für solche Pflegehilfsmittel und in dem finanziellen Umfang übernimmt, für die ich eine Kostenübernahmeerklärung durch die Pflegekasse erhalten habe. Kosten für evtl. darüberhinausgehende Leistungen sind von mir selbst zu tragen. Eine Durchschrift dieser Erklärung habe ich erhalten. Weiterhin bin ich darauf hingewiesen worden, dass ich die erhaltenen Produkte ausnahmslos für die häusliche Pflege durch eine private Pflegeperson (und nicht durch Pflegedienste oder Einrichtungen der Tagespflege) verwenden darf.');
+		$('<td>',{'class':'anlage3 anlage3_p','colspan':'5'}).appendTo(tr).append('Ich darf die überlassenen Pflegehilfsmittel keinem Dritten verleihen, übereignen oder verpfänden. Ich bin darüber aufgeklärt worden, dass die Pflegekasse die Kosten nur für solche Pflegehilfsmittel und in dem finanziellen Umfang übernimmt, für die ich eine Kostenübernahmeerklärung durch die Pflegekasse erhalten habe. Kosten für evtl. darüberhinausgehende Leistungen sind von mir selbst zu tragen. Eine Durchschrift dieser Erklärung habe ich erhalten. Weiterhin bin ich darauf hingewiesen worden, dass ich die erhaltenen Produkte ausnahmslos für die häusliche Pflege durch eine private Pflegeperson (und nicht durch Pflegedienste oder Einrichtungen der Tagespflege) verwenden darf.');
 		
 		tr = $('<tr>', printonly).appendTo(anlage);
 		$('<td>',{'class':'anlage3 anlage3_sign anlage3_sign_datum'}).appendTo(tr).append((date.getDate() > 9 ? '':'0')+date.getDate()+'.'+(date.getMonth() < 9 ? '0':'')+(date.getMonth()+1)+'.'+date.getFullYear());
-		$('<td>',{'class':'anlage3 anlage3_sign','colspan':'3'}).appendTo(tr).append('&nbsp;');
+		$('<td>',{'class':'anlage3 anlage3_sign','colspan':'4'}).appendTo(tr).append('&nbsp;');
 		
 		tr = $('<tr>', printonly).appendTo(anlage);
-		$('<td>',{'class':'anlage3 anlage3_signlabel','colspan':'4'}).appendTo(tr).append('Datum und Unterschrift der/des Versicherten*');
+		$('<td>',{'class':'anlage3 anlage3_signlabel','colspan':'5'}).appendTo(tr).append('Datum und Unterschrift der/des Versicherten*');
 		
 		tr = $('<tr>', printonly).appendTo(anlage);
-		$('<td>',{'class':'anlage3 anlage3_footnote','colspan':'4'}).appendTo(tr).append('*Unterschrift der Betreuungsperson oder des gesetzlichen Vertreters bei Personen, die das 18. Lebensjahr noch nicht vollendet haben');
+		$('<td>',{'class':'anlage3 anlage3_footnote','colspan':'5'}).appendTo(tr).append('*Unterschrift der Betreuungsperson oder des gesetzlichen Vertreters bei Personen, die das 18. Lebensjahr noch nicht vollendet haben');
 	});	
 }
 
