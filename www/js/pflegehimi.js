@@ -189,7 +189,7 @@ function sumupall() {
 		beih += Math.ceil(pg51 / 2.0 * 100.0) / 100.0;
 	}
 	
-	if(getCheck('#check_zuzahlung_pg54')) {
+	if(getCheck('#check_zuzahlung_pg51')) {
 		console.log('Zuzahlung: JA');
 		zuz = Math.round(pg51 * 10.0) / 100.0;
 	} else {
@@ -576,7 +576,7 @@ function create_pg54(patient_id) {
 		himi_inputform(pflegehimi51, anlage);
 	
 		tr = $('<tr>').appendTo(anlage);
-		$('<td>',{'class':'anlage3 anlage3_check','colspan':'4'}).appendTo(tr).append( check(null, 'anlage3_check', 'check_zuzahlung_pg54', '1', 'Zuzahlung PG 51', true).on('change', function() { console.log('Änderung Zuzahlung'); sumupall(); } ));
+		$('<td>',{'class':'anlage3 anlage3_check','colspan':'4'}).appendTo(tr).append( check(null, 'anlage3_check', 'check_zuzahlung_pg51', '1', 'Zuzahlung PG 51', false).on('change', function() { console.log('Änderung Zuzahlung'); sumupall(); } ));
 		eur( $('<td>',{'class':'anlage3 anlage3_sum anlage3_rightcol'}).appendTo(tr).append( input(null,'input_betrag input_zuzahlung','input_zuzahlung', null, true)) );
 		
 		tr = $('<tr>').appendTo(anlage);
