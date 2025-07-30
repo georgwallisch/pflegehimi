@@ -2,11 +2,12 @@
 <?php
 
 	require_once('config.php');
+	require_once('gwlib_luhn.php');
 	/*
 	$st_getid_pflegekasse = $db->prepare('SELECT id FROM pflegekasse WHERE ik=?');
 	$st_insert_pflegekasse = $db->prepare('INSERT INTO pflegekasse ('.implode(',',array_keys($pflegekasse_felder)).') VALUES (?'.str_repeat(',?', count($pflegekasse_felder) - 1).')');
 	*/
-	
+		
 	if(VERBOSE) echo "\n*** VERBOSE Mode ***\n";
 	
 	echo "\n*** PflegeHiMI Import ***\n";
@@ -40,6 +41,11 @@
 			echo "Cannot access $f or it is not a valid file!\n";
 		}
 	}
+	
+	$invalid_ik = array();
+	$invalid_vsnr = array();
+	
+	gwm_set_diry($db, 'patienten');
 
 	foreach($files as $filepath) {
 	
@@ -135,71 +141,137 @@
 					}
 					
 					$ik = $data['IK_PK'];
-				
-					if(VERBOSE) {
+				/*
+					if(DEBUGMODE) {
 							echo "\n";
 							print_r($data);
 							echo "\n";
 						}
-
+// */
 	
-					if(VERBOSE) echo "pflegekasse_ik: $ik\n";
+					if(DEBUGMODE) echo "pflegekasse_ik: $ik\n";
 					
 					if($ik > 0) {
-					
-						$pflegekasse_id = gwm_get_id($db, 'pflegekasse', 'ik', $ik, 'i');
-											
-						if($pflegekasse_id === false) {
-							/* pflegekasse_ik ist noch nicht in der DB => neu anlegen */
-							gwm_create($db, 'pflegekasse', gwm_mapdata($data, $pflegekasse_felder), $importbind);
-							$pflegekasse_id = gwm_get_id($db, 'pflegekasse', 'ik', $ik, 'i');
-						}						
+						$valid = check_ik($ik);
+						
+						if(!$valid) {
+							if(VERBOSE) echo "IK $ik ist ungültig!\n";
+							if(!in_array($ik, $invalid_ik)) $invalid_ik[] = $ik;
+						} else {
+							if(DEBUGMODE) echo "IK $ik ist gültig.\n";
+													
+							$pflegekasse_id = gwm_get_id($db, 'pflegekasse', 'ik', $ik);
+							
+							if(is_array($pflegekasse_id)) {
+								echo "\nERROR: Mehr als eine Pflegekassen-ID als Ergebnis!\n\n";
+								print_r($pflegekasse_id);
+								exit(1);
+							}
+							
+							if($pflegekasse_id === false) {
+								if(VERBOSE) echo "Pflegekassen-IK $ik noch nicht in der DB vorhanden. Lege neu an..\n";
+								/* pflegekasse_ik ist noch nicht in der DB => neu anlegen */
+								gwm_create($db, 'pflegekasse', gwm_mapdata($data, $pflegekasse_felder), $importbind);
+								$pflegekasse_id = gwm_get_id($db, 'pflegekasse', 'ik', $ik);
+							} else {
+								if(DEBUGMODE) echo "Pflegekassen-IK $ik bereits in der DB vorhanden.\n";
+							}
+						}
+					} else {
+						if(DEBUGMODE) echo "Keine Pflegekassen-IK!\n";
 					}
 					
 					$vsnr = $data['VSNr'];
-					
-					if(VERBOSE) echo "vsnr: $vsnr\n";
-						
+															
 					if($vsnr != '') {
-						$patient_id = gwm_get_id($db, 'patienten', 'vsnr', $vsnr);
+						if(DEBUGMODE) echo "vsnr: $vsnr\n";
+						$valid = check_vsnr($vsnr);
 						
-						if($patient_id === false) {
-							/* patienten_id ist noch nicht in der DB => neu anlegen */
-							echo "Patient mit VSNr $vsnr noch nicht in DB vorhanden! Lege neu an..\n";
-							gwm_create($db, 'patienten', gwm_mapdata($data, $patienten_felder), $importbind);
+						if(!$valid) {
+							if(VERBOSE) echo "VSNR $vsnr ist ungültig!\n";
+							if(!in_array($vsnr, $invalid_vsnr)) $invalid_vsnr[] = $vsnr;
+						} else {
+							if(DEBUGMODE) echo "VSNR $vsnr ist gültig.\n";
+							
 							$patient_id = gwm_get_id($db, 'patienten', 'vsnr', $vsnr);
-						} else { 
-							echo "Patient $patient_id bereits in DB vorhanden!\n";
+							
+							if(is_array($patient_id)) {
+								echo "\nERROR: Mehr als eine Patienten-ID als Ergebnis!\n\n";
+								print_r($patient_id);
+								exit(1);
+							}
+							
+							if($patient_id === false) {
+								if(VERBOSE) echo "Patient mit VSNr $vsnr noch nicht in DB vorhanden! Suche über Personendaten..\n";
+								$patient_id = gwm_get_id($db, 'patienten', array('name' => $data['name'], 'vorname' => $data['vorname'], 'vorname' => $data['vorname']));
+								if(VERBOSE and $patient_id !== false) echo "Patient über Personendaten gefunden!\n";
+							}
+							
+							if($patient_id === false) {
+								/* patienten_id ist noch nicht in der DB => neu anlegen */
+								if(VERBOSE) echo "Patient mit VSNr $vsnr noch nicht in DB vorhanden! Lege neu an..\n";
+								gwm_create($db, 'patienten', gwm_mapdata($data, $patienten_felder), $importbind);
+								if(VERBOSE) $patient_id = gwm_get_id($db, 'patienten', 'vsnr', $vsnr);
+							} else { 
+								if(VERBOSE) echo "Patient $patient_id bereits in DB vorhanden!\n";
+								gwm_update_by_id($db, 'patienten', $patient_id, gwm_mapdata($data, $patienten_felder));
+							}
+							
+							gwm_set_clean_by_id($db, 'patienten', $patient_id);
 						}
 						
+					} else {
+						if(DEBUGMODE) echo "Keine VSNR gegeben!\n";
+						continue;
 					}
 					
 					//echo "Setze pflegekasse_id $pflegekasse_id bei Patient $patienten_id\n";
 					
 					if($patient_id > 0 and $pflegekasse_id > 0) {
+						if(VERBOSE) echo "Aktualisiere Verknüpfung zwischen Patient ID $patient_id und Pflegekasse IK $pflegekasse_id ..\n";
 						gwm_update_by_id($db, 'patienten', $patient_id, array('pflegekasse_id' => $pflegekasse_id));					
 					} 
 					
 					$pg54 = $data['GenKZ_PG54'];
 					
-					if($pg54 != '') {
+					$pg54_id = gwm_get_id($db, 'gen_pg54', 'patient_id', $patient_id);
 					
-						$pg54_id = gwm_get_id($db, 'gen_pg54', 'patient_id', $patient_id);
-						
+					if($pg54 != '') {
+						if(DEBUGMODE) echo "PG54-Genehmigungskennzeichen: $pg54\n";						
 						if($pg54_id === false) {
 								/* pg54 ist noch nicht in der DB => neu anlegen */
+								if(VERBOSE) echo "PG54-Genehmigungskennzeichen $pg54 für Patient ID $patient_id noch nicht in der DB vorhanden. Lege neu an..\n";
 								gwm_create($db, 'gen_pg54', array('patient_id' => $patient_id, 'kz' => $pg54), array('patient_id' => 'i', 'kz' => 's'));
 								$pg54_id = gwm_get_id($db, 'gen_pg54', 'patient_id', $patient_id);
-							} 
+							} else {
+								if(DEBUGMODE) echo "PG54-Genehmigungskennzeichen $pg54 für Patient ID $patient_id bereits in der DB vorhanden.\n";
+								gwm_update_by_id($db, 'gen_pg54', $pg54_id, array('patient_id' => $patient_id, 'kz' => $pg54));
+							}
+					} else if($pg54 == '' and $pg54_id !== false) {
+						gwm_delete_by_id($db, 'gen_pg54', $pg54_id, 1);					
 					}
 						
 				}
-				
-				
+								
 				fclose($fp);
+				
+				gwm_delete_dirty($db, 'patienten');
 						
 				echo "..fertig: {$importcounter} Zeilen eingelesen und {$newcounter} Datensätze neu eingepflegt!\n";
-	
+				
+				if(VERBOSE) {
+					if(($c = count($invalid_ik)) > 0) {
+						sort($invalid_ik);
+						echo "\n\nEs gab $c ungültige IK:\n\n".implode("\n", $invalid_ik);
+					}
+					
+					if(($c = count($invalid_vsnr)) > 0) {
+						sort($invalid_vsnr);
+						echo "\n\nEs gab $c ungültige VSNR:\n\n".implode("\n", $invalid_vsnr);
+					}
+					
+					echo "\n\n..jetzt aber fertig!\n";
+				}	
 	}
 	
 ?>

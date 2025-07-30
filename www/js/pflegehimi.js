@@ -746,7 +746,9 @@ function generateTable(hitlist, column_map, params) {
 					console.log('Startdatum '+item['pg54_start']+' liegt in der Zukunft!!');
 				}				
 			} else {
-				console.log('Kein Startdatum vorhanden!!');
+				console.log('Kein Startdatum vorhanden!! Gehe von heute aus..');
+				start = moment();
+				valid = true;
 			}
 			
 			if(item['pg54_ende'] != null) {
@@ -764,6 +766,7 @@ function generateTable(hitlist, column_map, params) {
 			
 			if(item['verstorben'] > 0) {
 				/*Verstorben!!*/
+				console.log('Patient ist verstorben!');
 			} else if(valid) {
 				let btn = $('<button>', {'type':'button', 'class':'btn btn-default btn-xs'}).appendTo(td).on("click",function() { 
 					create_pg54(item['id']);

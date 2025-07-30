@@ -1,11 +1,32 @@
 <?php
 
-	function gwm_get_id($db, $table, $key, $value, $type = 's') {
+	function gwm_detect_type($value) {		
+		$t = '';
+		if(is_array($value)) {
+			foreach($value as $k => $v) {
+				$t .= gwm_detect_type($v);
+			}
+		} else if(is_int($v)) $t = 'i';
+		else if(is_float($v)) $t = 'd';
+		else if(is_string($v) and strlen($v) > 255) $t = 'b';
+		return $t;		
+	}
 		
-		$st = $db->stmt_init();		
-		$st->prepare('SELECT id FROM '.$table.' WHERE '.$key.'=?');
+	function gwm_get_id($db, $table, $key, $value = null, $operator = 'AND') {
+				
+		$keys = array();
+		$values = array();
 		
-		$st->bind_param($type, $value);
+		if(is_string($key)) {
+			$key = array($key => $value);			
+		}
+		
+		if(!is_array($key) or count($key) < 1) {
+			return false;
+		}
+			
+		$st = $db->stmt_init();
+		$st->prepare('SELECT id FROM '.$table.' WHERE '.gwm_build_prop_string($key, $operator));
 		$st->execute();
 		
 		$result = $st->get_result();
@@ -29,8 +50,9 @@
 	}
 	
 	function gwm_update_by_id($db, $table, $id, $data) {
+		
 		if(!is_int($id)) {
-			echo "UPDATE Error: Given ID is not an integer!\n";
+			echo "UPDATE Error: Given ID ('$id') is not an integer!\n";
 			return false;
 		}
 	
@@ -71,7 +93,7 @@
 	function gwm_build_prop_string($data, $connector) {	
 		return implode(' '.$connector.' ', gwm_build_prop($data));		 
 	}
-		
+	
 	function gwm_update_by_prop($db, $table, $prop, $data, $limit = null) {
 		
 		if(!is_array($prop)) {
@@ -88,6 +110,76 @@
 		$st = $db->stmt_init();		
 		$st->prepare($q);
 		
+		if($st->execute()) {
+			return $st->affected_rows;
+		} else {
+			return false;
+		}
+	}
+	
+	function gwm_delete_by_id($db, $table, $id, $limit = null) {
+		
+		if(!is_int($id)) {
+			echo "DELETE Error: Given ID ('$id') is not an integer!\n";
+			return false;
+		}
+		
+		return gwm_delete_by_prop($db, $table, array('id' => $id), $limit);
+	}
+	
+	function gwm_delete_by_prop($db, $table, $prop, $limit = null) {
+		
+		if(!is_array($prop)) {
+			echo "UPDATE Error: Given property is not an array!\n";
+			return false;
+		}
+				
+		$q = 'DELETE FROM '.$table.' WHERE '.gwm_build_prop_string($prop, 'AND');
+		
+		if(is_int($limit)) {
+			$q.=' LIMIT '.$limit;
+		}
+				
+		$st = $db->stmt_init();		
+		$st->prepare($q);
+		
+		if($st->execute()) {
+			return $st->affected_rows;
+		} else {
+			return false;
+		}
+	}
+	
+	function gwm_set_diry($db, $table) {
+				
+		$q = 'UPDATE '.$table.' SET dirty=1 WHERE 1';
+					
+		$st = $db->stmt_init();		
+		$st->prepare($q);
+		
+		if($st->execute()) {
+			return $st->affected_rows;
+		} else {
+			return false;
+		}
+	}
+	
+	function gwm_delete_dirty($db, $table) {
+		return gwm_delete_by_prop($db, $table, array('dirty' => 1));
+	}
+	
+	function gwm_set_clean_by_id($db, $table, $id) {
+		
+		if(!is_int($id)) {
+			echo "Cleanup Error: Given ID ('$id') is not an integer!\n";
+			return false;
+		}
+				
+		$q = 'UPDATE '.$table.' SET dirty=0 WHERE id=? LIMIT 1';
+					
+		$st = $db->stmt_init();		
+		$st->prepare($q);
+		$st->bind_param('i', $id);
 		if($st->execute()) {
 			return $st->affected_rows;
 		} else {

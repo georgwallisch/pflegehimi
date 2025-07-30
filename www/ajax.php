@@ -101,7 +101,7 @@ try {
 		}
 		$q .= implode(' AND ', $c);
 		if(is_null(get_value('includedead'))) {
-			$q .= ' AND p.verstorben <> 1';
+			$q .= ' AND (p.verstorben <> 1 OR p.verstorben IS NULL)';
 		}
 		$q .= $o;
 		$st = $db->prepare($q);

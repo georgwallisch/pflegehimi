@@ -24,5 +24,6 @@
 	$db_date_format = '%d.%m.%Y';
 	
 	define('VERBOSE', true);
+	define('DEBUGMODE', false);
 
 ?>

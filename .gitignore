@@ -2,5 +2,6 @@
 *.marks
 *.csv
 csv_import/
+csv_import
 /config.php
 /db.php
